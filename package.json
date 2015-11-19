@@ -1,0 +1,29 @@
+{
+  "name": "probo-events",
+  "version": "1.0.0",
+  "description": "A generalized event pub/sub framework .",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Howard Tyson <howard@howardtyson.com>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "kafka-node": "^0.2.29",
+    "through2": "^2.0.0"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "devDependencies": {
+    "mocha": "^2.3.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/ProboCI/probo-events.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ProboCI/probo-events/issues"
+  },
+  "homepage": "https://github.com/ProboCI/probo-events#readme"
+}
