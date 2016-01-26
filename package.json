@@ -4,11 +4,12 @@
   "description": "A generalized event pub/sub framework .",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./node_modules/.bin/mocha"
   },
   "author": "Howard Tyson <howard@howardtyson.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "eslint-config-probo": "^1.0.2",
     "kafka-node": "^0.2.29",
     "through2": "^2.0.0"
   },
