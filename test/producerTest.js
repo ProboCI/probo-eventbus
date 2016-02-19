@@ -8,7 +8,7 @@ var ProboEvents = require('..')
 var Producer = ProboEvents.Producer
 
 var _stream = Symbol('_stream');
-class ProducerPlugin {
+class MemoryProducer {
   constructor(options, done) {
     if (typeof options === 'function') {
       done = options;
@@ -23,7 +23,7 @@ class ProducerPlugin {
   }
 }
 
-class ConsumerPlugin {
+class MemoryConsumer {
   constructor(options, done) {
     if (typeof options === 'function') {
       done = options;
@@ -53,8 +53,8 @@ function historyStream(done) {
 describe('Producer', function() {
   it('should write an event to the configured handler plugin', function(done) {
     var stream = through2.obj();
-    var producer = new ProducerPlugin({stream});
-    var consumer = new ConsumerPlugin({stream});
+    var producer = new MemoryProducer({stream});
+    var consumer = new MemoryConsumer({stream});
     consumer.stream.pipe(historyStream(function(error, events) {
       should.exist(events);
       events.length.should.equal(3);
@@ -72,7 +72,7 @@ describe('Producer', function() {
 
 describe('Consumer', function() {
   it('should receive events from the configured handler plugin', function(done) {
-    var consumerPlugin = new ConsumerPlugin()
+    var consumerPlugin = new MemoryConsumer()
     return done()
   })
 })
