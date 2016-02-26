@@ -1,7 +1,7 @@
 {
   "name": "probo-events",
   "version": "1.0.0",
-  "description": "A generalized event pub/sub framework .",
+  "description": "A generalized event pub/sub framework.",
   "main": "index.js",
   "scripts": {
     "test": "./node_modules/.bin/mocha",
@@ -10,17 +10,14 @@
   "author": "Howard Tyson <howard@howardtyson.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "async": "^1.5.2",
     "eslint": "^1.7.3",
     "eslint-config-probo": "^1.0.2",
     "kafka-node": "^0.2.30",
     "lodash": "^4.5.1",
     "through2": "^2.0.0"
   },
-  "directories": {
-    "test": "test"
-  },
   "devDependencies": {
-    "async": "^1.5.2",
     "mocha": "^2.3.2",
     "should": "^8.2.2"
   },
