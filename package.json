@@ -4,20 +4,24 @@
   "description": "A generalized event pub/sub framework .",
   "main": "index.js",
   "scripts": {
-    "test": "./node_modules/.bin/mocha"
+    "test": "./node_modules/.bin/mocha",
+    "watch": "./node_modules/.bin/mocha -w"
   },
   "author": "Howard Tyson <howard@howardtyson.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "eslint": "^1.7.3",
     "eslint-config-probo": "^1.0.2",
-    "kafka-node": "^0.2.29",
+    "kafka-node": "^0.2.30",
     "through2": "^2.0.0"
   },
   "directories": {
     "test": "test"
   },
   "devDependencies": {
-    "mocha": "^2.3.2"
+    "async": "^1.5.2",
+    "mocha": "^2.3.2",
+    "should": "^8.2.2"
   },
   "repository": {
     "type": "git",
