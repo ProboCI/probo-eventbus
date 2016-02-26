@@ -14,21 +14,21 @@ var plugins = lib.plugins;
  *
  * This is necessary in order to close over the plugin in scope.
  *
- * @param {Object} plugin - A plugin object containing `Producer` and `Consumer`.
+ * @param {String} plugin - A string representing a plugin name.
+ * @param {Object} options - An object with options specified for the Producer and Consumer.
  * @return {Function} - A function with the relevant plugin closed over to allow
  * properly scoped async iteration.
  */
-function getSuite(plugin) {
+function getSuite(plugin, options) {
   return function() {
     var Producer = plugins[plugin].Producer;
     var Consumer = plugins[plugin].Consumer;
     describe(plugin, function() {
       it('should read message from the consumer that were written to the producer', function(done) {
-        var stream = through2.obj();
-        var instantiator = function(Plugin, cb) {
-          new Plugin({topic: 'test', stream}, cb);
+        var instantiator = function(Plugin, type, cb) {
+          new Plugin(options[type], cb);
         };
-        async.parallel({producer: instantiator.bind(null, Producer), consumer: instantiator.bind(null, Consumer)}, function(error, plugins) {
+        async.parallel({producer: instantiator.bind(null, Producer, 'Producer'), consumer: instantiator.bind(null, Consumer, 'Consumer')}, function(error, plugins) {
           var producer = plugins.producer;
           var consumer = plugins.consumer;
           var cleanup = function(done) {
@@ -68,9 +68,23 @@ function getSuite(plugin) {
 }
 
 describe('Plugins', function() {
-  for (let plugin in plugins) {
-    if (plugins.hasOwnProperty(plugin)) {
-      getSuite(plugin)();
-    }
-  }
+  // getSuite('Kafka')();
+  var memoryOptions = {
+    stream: through2.obj(),
+    topic: 'test',
+  };
+  getSuite('Memory', {Producer: memoryOptions, Consumer: memoryOptions})();
+  var kafkaOptions = {
+    Producer: {
+      topic: 'test',
+    },
+    Consumer: {
+      topic: 'test',
+      group: 'test',
+      kafkaConsumerOptions: {
+        autoCommitIntervalMs: 1,
+      },
+    },
+  };
+  getSuite('Kafka', kafkaOptions)();
 });
