@@ -14,10 +14,14 @@
     "eslint": "^1.7.3",
     "eslint-config-probo": "^1.0.2",
     "kafka-node": "^0.2.30",
+    "level": "^1.4.0",
     "lodash": "^4.5.1",
-    "through2": "^2.0.0"
+    "through2": "^1.1.1"
   },
   "devDependencies": {
+    "async": "^1.5.2",
+    "coveralls": "^2.11.8",
+    "istanbul": "^0.4.2",
     "mocha": "^2.3.2",
     "should": "^8.2.2"
   },

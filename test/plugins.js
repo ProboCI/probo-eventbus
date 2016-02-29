@@ -36,18 +36,17 @@ function getSuite(plugin, options) {
           };
           var consumedEvents = [];
           consumer.stream.pipe(through2.obj(function(data, enc, cb) {
-            console.log('consumed:', data)
-
-            this.push(data);
             consumedEvents.push(data);
-            if (consumedEvents.length === 3) {
+            if (consumedEvents.length === 23) {
               setTimeout(function() {
                 try {
                   should.exist(consumedEvents);
-                  consumedEvents.length.should.equal(3);
+                  consumedEvents.length.should.equal(23);
                   consumedEvents[0].foo.should.equal('bar');
                   consumedEvents[1].baz.should.equal('bot');
-                  consumedEvents[2].captain.should.equal('spock');
+                  consumedEvents[2].line.should.equal(1);
+                  consumedEvents[21].line.should.equal(20);
+                  consumedEvents[22].captain.should.equal('spock');
                   cleanup(done);
                 }
                 catch (e) {
@@ -55,20 +54,17 @@ function getSuite(plugin, options) {
                   throw e;
                 }
               // Note: this is set such that the autocommit interval will be met.
-              }, 5);
+              }, 50);
             }
             cb();
           }));
           should.exist(producer.stream);
-
-          function write(data, end){
-            data.ts = new Date() + "";
-            producer.stream[end ? 'end' : 'write'](data);
+          producer.stream.write({foo: 'bar'});
+          producer.stream.write({baz: 'bot'});
+          for (let line = 1; line < 21; line++) {
+            producer.stream.write({line});
           }
-
-          write({foo: 'bar'});
-          write({baz: 'bot'});
-          write({captain: 'spock'}, true);
+          producer.stream.end({captain: 'spock'});
         });
       });
     });
@@ -91,7 +87,8 @@ describe('Plugins', function() {
       topic: 'test',
       group: 'test',
       kafkaConsumerOptions: {
-        autoCommitIntervalMs: 1,
+        autoCommit: false,
+        autoCommitIntervalMs: 5,
       },
     },
   };
