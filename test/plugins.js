@@ -36,6 +36,8 @@ function getSuite(plugin, options) {
           };
           var consumedEvents = [];
           consumer.stream.pipe(through2.obj(function(data, enc, cb) {
+            console.log('consumed:', data)
+
             this.push(data);
             consumedEvents.push(data);
             if (consumedEvents.length === 3) {
@@ -58,9 +60,15 @@ function getSuite(plugin, options) {
             cb();
           }));
           should.exist(producer.stream);
-          producer.stream.write({foo: 'bar'});
-          producer.stream.write({baz: 'bot'});
-          producer.stream.end({captain: 'spock'});
+
+          function write(data, end){
+            data.ts = new Date() + "";
+            producer.stream[end ? 'end' : 'write'](data);
+          }
+
+          write({foo: 'bar'});
+          write({baz: 'bot'});
+          write({captain: 'spock'}, true);
         });
       });
     });
@@ -77,6 +85,7 @@ describe('Plugins', function() {
   var kafkaOptions = {
     Producer: {
       topic: 'test',
+      version: 1,
     },
     Consumer: {
       topic: 'test',
