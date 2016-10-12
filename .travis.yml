@@ -11,6 +11,7 @@ before_install:
   - nohup bash -c "cd kafka && bin/zookeeper-server-start.sh config/zookeeper.properties &"
   - nohup bash -c "cd kafka && bin/kafka-server-start.sh config/server.properties &"
   - sleep 5
+  - kafka/bin/kafka-topics.sh --create --partitions 1 --replication-factor 1 --topic test --zookeeper localhost:2181
 node_js:
   - "4"
   - "5"
