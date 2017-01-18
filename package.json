@@ -22,7 +22,7 @@
     "coveralls": "^2.11.8",
     "istanbul": "^0.4.2",
     "mocha": "^2.3.2",
-    "kafka-node": "^0.2.30",
+    "kafka-node": "tizzo/kafka-node#consumer-stream",
     "should": "^8.2.2"
   },
   "repository": {
