@@ -37,17 +37,22 @@ function getSuite(plugin, options, beforeCallback, afterCallback) {
           new Plugin(options[type], cb);
         };
         async.parallel({producer: instantiator.bind(null, Producer, 'Producer'), consumer: instantiator.bind(null, Consumer, 'Consumer')}, function(error, plugins) {
-          var producer = plugins.producer;
-          var consumer = plugins.consumer;
-          var consumedEvents = [];
-          var commitStream = consumer.createCommitStream({autoCommit: false, passthrough: true});
-          var cleanup = function(done) {
+          let producer = plugins.producer;
+          let consumer = plugins.consumer;
+          let rawStreamEvents = [];
+          let commitStream = consumer.createCommitStream({autoCommit: false, passthrough: true});
+          let cleanup = function(done) {
             async.series([commitStream.commit, producer.destroy, consumer.destroy], done);
           };
           let eventCount = 0;
+          let regularStreamEvents = [];
+          consumer.stream.pipe(through2.obj(function(data, enc, cb) {
+            regularStreamEvents.push(data);
+            cb();
+          }));
           consumer.rawStream
             .pipe(through2.obj(function(data, enc, cb) {
-              consumedEvents.push(data);
+              rawStreamEvents.push(data);
               cb(null, data);
             }))
             .pipe(commitStream)
@@ -57,12 +62,17 @@ function getSuite(plugin, options, beforeCallback, afterCallback) {
               if (eventCount === 23) {
                 commitStream.commit(function() {
                   try {
-                    should.exist(consumedEvents[0].data.foo, 'The first message should have a foo property');
-                    consumedEvents[0].data.foo.should.equal('bar');
-                    consumedEvents[1].data.baz.should.equal('bot');
-                    consumedEvents[2].data.line.should.equal(1);
-                    consumedEvents[21].data.line.should.equal(20);
-                    consumedEvents[22].data.captain.should.equal('spock');
+                    regularStreamEvents.length.should.equal(23);
+                    regularStreamEvents[0].foo.should.equal('bar');
+                    regularStreamEvents[1].baz.should.equal('bot');
+                    regularStreamEvents[2].line.should.equal(1);
+                    regularStreamEvents[21].line.should.equal(20);
+                    should.exist(rawStreamEvents[0].data.foo, 'The first message should have a foo property');
+                    rawStreamEvents[0].data.foo.should.equal('bar');
+                    rawStreamEvents[1].data.baz.should.equal('bot');
+                    rawStreamEvents[2].data.line.should.equal(1);
+                    rawStreamEvents[21].data.line.should.equal(20);
+                    rawStreamEvents[22].data.captain.should.equal('spock');
                     cleanup(done);
                   }
                   catch (e) {
