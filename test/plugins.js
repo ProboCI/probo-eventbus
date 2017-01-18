@@ -5,6 +5,8 @@ var should = require('should');
 var through2 = require('through2');
 var async = require('async');
 
+var kafka = require('kafka-node');
+
 var lib = require('..');
 var plugins = lib.plugins;
 
@@ -19,45 +21,61 @@ var plugins = lib.plugins;
  * @return {Function} - A function with the relevant plugin closed over to allow
  * properly scoped async iteration.
  */
-function getSuite(plugin, options) {
+function getSuite(plugin, options, beforeCallback, afterCallback) {
   return function() {
+    if (beforeCallback) {
+      before(beforeCallback);
+    }
+    if (afterCallback) {
+      after(afterCallback);
+    }
     var Producer = plugins[plugin].Producer;
     var Consumer = plugins[plugin].Consumer;
     describe(plugin, function() {
-      it('should read message from the consumer that were written to the producer', function(done) {
+      it('should read messages from the consumer that were written to the producer', function(done) {
         var instantiator = function(Plugin, type, cb) {
           new Plugin(options[type], cb);
         };
         async.parallel({producer: instantiator.bind(null, Producer, 'Producer'), consumer: instantiator.bind(null, Consumer, 'Consumer')}, function(error, plugins) {
           var producer = plugins.producer;
           var consumer = plugins.consumer;
-          var cleanup = function(done) {
-            async.parallel([producer.destroy, consumer.destroy], done);
-          };
           var consumedEvents = [];
-          consumer.stream.pipe(through2.obj(function(data, enc, cb) {
-            consumedEvents.push(data);
-            if (consumedEvents.length === 23) {
-              setTimeout(function() {
-                try {
-                  should.exist(consumedEvents);
-                  consumedEvents.length.should.equal(23);
-                  consumedEvents[0].foo.should.equal('bar');
-                  consumedEvents[1].baz.should.equal('bot');
-                  consumedEvents[2].line.should.equal(1);
-                  consumedEvents[21].line.should.equal(20);
-                  consumedEvents[22].captain.should.equal('spock');
-                  cleanup(done);
-                }
-                catch (e) {
-                  cleanup(done);
-                  throw e;
-                }
-              // Note: this is set such that the autocommit interval will be met.
-              }, 50);
-            }
-            cb();
-          }));
+          var commitStream = consumer.createCommitStream({autoCommit: false, passthrough: true});
+          var cleanup = function(done) {
+            async.series([commitStream.commit, producer.destroy, consumer.destroy], done);
+          };
+          let eventCount = 0;
+          consumer.rawStream
+            .pipe(through2.obj(function(data, enc, cb) {
+              consumedEvents.push(data);
+              cb(null, data);
+            }))
+            .pipe(commitStream)
+            .pipe(through2.obj(function(data, enc, cb) {
+              eventCount++;
+              cb(null);
+              if (eventCount === 23) {
+                commitStream.commit(function() {
+                  try {
+                    should.exist(consumedEvents[0].data.foo, 'The first message should have a foo property');
+                    consumedEvents[0].data.foo.should.equal('bar');
+                    consumedEvents[1].data.baz.should.equal('bot');
+                    consumedEvents[2].data.line.should.equal(1);
+                    consumedEvents[21].data.line.should.equal(20);
+                    consumedEvents[22].data.captain.should.equal('spock');
+                    cleanup(done);
+                  }
+                  catch (e) {
+                    cleanup(function() {
+                      done(e);
+                    });
+                  }
+                });
+              }
+              else if (eventCount > 23) {
+                cleanup(done.bind(this, new Error('More than 23 events received')));
+              }
+            }))
           should.exist(producer.stream);
           producer.stream.write({foo: 'bar'});
           producer.stream.write({baz: 'bot'});
@@ -76,15 +94,17 @@ describe('Plugins', function() {
   var memoryOptions = {
     stream: through2.obj(),
     topic: 'test',
+    version: 1,
   };
   getSuite('Memory', {Producer: memoryOptions, Consumer: memoryOptions})();
+  const topic = '_eventbus_kafka_' + Date.now();
   var kafkaOptions = {
     Producer: {
-      topic: 'test',
+      topic,
       version: 1,
     },
     Consumer: {
-      topic: 'test',
+      topic,
       group: 'test',
       kafkaConsumerOptions: {
         autoCommit: false,
@@ -92,5 +112,12 @@ describe('Plugins', function() {
       },
     },
   };
-  getSuite('Kafka', kafkaOptions)();
+  let createTopic = function(done) {
+    let client = new kafka.Client();
+    let producer = new kafka.Producer(client);
+    producer.on('ready', function() {
+      producer.createTopics([topic], done);
+    });
+  };
+  getSuite('Kafka', kafkaOptions, createTopic)();
 });
