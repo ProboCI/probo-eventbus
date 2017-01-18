@@ -1,0 +1,24 @@
+sudo: false
+language: node_js
+env:
+  global:
+    - CXX=g++-4.8
+    - ZOOKEEPER_PEERS=localhost:2181
+    - KAFKA_PEERS=localhost:9092
+before_install:
+  - wget http://www.us.apache.org/dist/kafka/0.8.2.1/kafka_2.10-0.8.2.1.tgz -O kafka.tgz
+  - mkdir -p kafka && tar xzf kafka.tgz -C kafka --strip-components 1
+  - nohup bash -c "cd kafka && bin/zookeeper-server-start.sh config/zookeeper.properties &"
+  - nohup bash -c "cd kafka && bin/kafka-server-start.sh config/server.properties &"
+  - sleep 5
+  - kafka/bin/kafka-topics.sh --create --partitions 1 --replication-factor 1 --topic test --zookeeper localhost:2181
+node_js:
+  - "4"
+  - "5"
+  - "6"
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8
