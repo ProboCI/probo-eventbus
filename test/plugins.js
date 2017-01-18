@@ -5,6 +5,8 @@ var should = require('should');
 var through2 = require('through2');
 var async = require('async');
 
+var kafka = require('kafka-node');
+
 var lib = require('..');
 var plugins = lib.plugins;
 
@@ -19,8 +21,14 @@ var plugins = lib.plugins;
  * @return {Function} - A function with the relevant plugin closed over to allow
  * properly scoped async iteration.
  */
-function getSuite(plugin, options) {
+function getSuite(plugin, options, beforeCallback, afterCallback) {
   return function() {
+    if (beforeCallback) {
+      before(beforeCallback);
+    }
+    if (afterCallback) {
+      after(afterCallback);
+    }
     var Producer = plugins[plugin].Producer;
     var Consumer = plugins[plugin].Consumer;
     describe(plugin, function() {
@@ -89,13 +97,14 @@ describe('Plugins', function() {
     version: 1,
   };
   getSuite('Memory', {Producer: memoryOptions, Consumer: memoryOptions})();
+  const topic = '_eventbus_kafka_' + Date.now();
   var kafkaOptions = {
     Producer: {
-      topic: 'test1',
+      topic,
       version: 1,
     },
     Consumer: {
-      topic: 'test1',
+      topic,
       group: 'test',
       kafkaConsumerOptions: {
         autoCommit: false,
@@ -103,5 +112,12 @@ describe('Plugins', function() {
       },
     },
   };
-  getSuite('Kafka', kafkaOptions)();
+  let createTopic = function(done) {
+    let client = new kafka.Client();
+    let producer = new kafka.Producer(client);
+    producer.on('ready', function() {
+      producer.createTopics([topic], done);
+    });
+  };
+  getSuite('Kafka', kafkaOptions, createTopic)();
 });
