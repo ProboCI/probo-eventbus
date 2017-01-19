@@ -68,7 +68,9 @@ function getSuite(plugin, options, beforeCallback, afterCallback) {
                     regularStreamEvents[2].line.should.equal(1);
                     regularStreamEvents[21].line.should.equal(20);
                     should.exist(rawStreamEvents[0].data.foo, 'The first message should have a foo property');
+                    rawStreamEvents.length.should.equal(23);
                     rawStreamEvents[0].data.foo.should.equal('bar');
+                    parseInt(rawStreamEvents[0].version).should.equal(1);
                     rawStreamEvents[1].data.baz.should.equal('bot');
                     rawStreamEvents[2].data.line.should.equal(1);
                     rawStreamEvents[21].data.line.should.equal(20);
