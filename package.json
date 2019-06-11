@@ -11,17 +11,16 @@
   "license": "Apache-2.0",
   "dependencies": {
     "async": "^1.5.2",
-    "eslint": "^5.9.0",
-    "eslint-config-probo": "^1.0.2",
+    "kafka-node": "tizzo/kafka-node#consumer-stream",
     "lodash": "^4.17.11",
     "through2": "^1.1.1"
   },
   "devDependencies": {
-    "async": "^1.5.2",
+    "eslint": "^5.9.0",
+    "eslint-config-probo": "^1.0.2",
     "coveralls": "^2.11.8",
     "istanbul": "^0.4.2",
     "mocha": "^2.3.2",
-    "kafka-node": "tizzo/kafka-node#consumer-stream",
     "should": "^8.2.2"
   },
   "repository": {
