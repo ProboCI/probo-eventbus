@@ -1,11 +1,10 @@
 'use strict';
 
 /* global describe it */
-var should = require('should');
-var through2 = require('through2');
-var async = require('async');
-
-var kafka = require('kafka-node');
+const async = require('async');
+const kafka = require('kafka-node');
+const should = require('should');
+const through2 = require('through2');
 
 var lib = require('..');
 var plugins = lib.plugins;
@@ -22,45 +21,49 @@ var plugins = lib.plugins;
  * properly scoped async iteration.
  */
 function getSuite(plugin, options, beforeCallback, afterCallback) {
-  return function() {
+  return () => {
     if (beforeCallback) {
       before(beforeCallback);
     }
     if (afterCallback) {
       after(afterCallback);
     }
-    var Producer = plugins[plugin].Producer;
-    var Consumer = plugins[plugin].Consumer;
-    describe(plugin, function() {
-      it('should read messages from the consumer that were written to the producer', function(done) {
-        var instantiator = function(Plugin, type, cb) {
+
+    let Producer = plugins[plugin].Producer;
+    let Consumer = plugins[plugin].Consumer;
+
+    describe(plugin, () => {
+      it('should read messages from the consumer that were written to the producer', done => {
+        let instantiator = (Plugin, type, cb) => {
           new Plugin(options[type], cb);
         };
-        async.parallel({producer: instantiator.bind(null, Producer, 'Producer'), consumer: instantiator.bind(null, Consumer, 'Consumer')}, function(error, plugins) {
+
+        async.parallel({producer: instantiator.bind(null, Producer, 'Producer'), consumer: instantiator.bind(null, Consumer, 'Consumer')}, (error, plugins) => {
           let producer = plugins.producer;
           let consumer = plugins.consumer;
           let rawStreamEvents = [];
           let commitStream = consumer.createCommitStream({autoCommit: false, passthrough: true});
-          let cleanup = function(done) {
+          let cleanup = done => {
             async.series([commitStream.commit, producer.destroy, consumer.destroy], done);
           };
           let eventCount = 0;
           let regularStreamEvents = [];
-          consumer.stream.pipe(through2.obj(function(data, enc, cb) {
+          consumer.stream.pipe(through2.obj((data, enc, cb) => {
             regularStreamEvents.push(data);
             cb();
           }));
+
           consumer.rawStream
-            .pipe(through2.obj(function(data, enc, cb) {
+            .pipe(through2.obj((data, enc, cb) => {
               rawStreamEvents.push(data);
               cb(null, data);
             }))
             .pipe(commitStream)
-            .pipe(through2.obj(function(data, enc, cb) {
+            .pipe(through2.obj((data, enc, cb) => {
               eventCount++;
               cb(null);
               if (eventCount === 23) {
-                commitStream.commit(function() {
+                commitStream.commit(() => {
                   try {
                     regularStreamEvents.length.should.equal(23);
                     regularStreamEvents[0].foo.should.equal('bar');
@@ -78,7 +81,7 @@ function getSuite(plugin, options, beforeCallback, afterCallback) {
                     cleanup(done);
                   }
                   catch (e) {
-                    cleanup(function() {
+                    cleanup(() => {
                       done(e);
                     });
                   }
@@ -101,7 +104,102 @@ function getSuite(plugin, options, beforeCallback, afterCallback) {
   };
 }
 
-describe('Plugins', function() {
+function getSuite2(plugin, options, beforeCallback, afterCallback) {
+  return () => {
+    if (beforeCallback) {
+      before(beforeCallback);
+    }
+    if (afterCallback) {
+      after(afterCallback);
+    }
+
+    let Producer = plugins[plugin].Producer;
+    let Consumer = plugins[plugin].Consumer;
+
+    describe(plugin, () => {
+      it('should read messages from the consumer that were written to the producer', done => {
+        let instantiator = (Plugin, type, cb) => {
+          new Plugin(options[type], cb);
+        };
+
+        async.parallel({producer: instantiator.bind(null, Producer, 'Producer'), consumer: instantiator.bind(null, Consumer, 'Consumer')}, (error, plugins) => {
+          let producer = plugins.producer;
+          let consumer = plugins.consumer;
+          let rawStreamEvents = [];
+          let commitStream = consumer.createCommitStream({autoCommit: false, passthrough: true});
+          let cleanup = done => {
+            async.series([commitStream.commit, producer.destroy, consumer.destroy], done);
+          };
+          let eventCount = 0;
+          let regularStreamEvents = [];
+          consumer.stream.pipe(through2.obj((data, enc, cb) => {
+            console.log(data);
+            regularStreamEvents.push(data);
+            cb();
+          }));
+          console.log('here');
+
+          //console.log(consumer.rawStream);
+
+          consumer.rawStream
+            .pipe(through2.obj((data, enc, cb) => {
+              console.log('here2');
+              return done();
+              rawStreamEvents.push(data);
+              cb(null, data);
+            }))
+            .pipe(commitStream)
+            .pipe(through2.obj((data, enc, cb) => {
+              console.log('here3');
+              eventCount++;
+              cb(null);
+              if (eventCount === 23) {
+                commitStream.commit(() => {
+                  try {
+                    console.log('here4');
+                    regularStreamEvents.length.should.equal(23);
+                    regularStreamEvents[0].foo.should.equal('bar');
+                    regularStreamEvents[1].baz.should.equal('bot');
+                    regularStreamEvents[2].line.should.equal(1);
+                    regularStreamEvents[21].line.should.equal(20);
+                    should.exist(rawStreamEvents[0].data.foo, 'The first message should have a foo property');
+                    rawStreamEvents.length.should.equal(23);
+                    rawStreamEvents[0].data.foo.should.equal('bar');
+                    parseInt(rawStreamEvents[0].version).should.equal(1);
+                    rawStreamEvents[1].data.baz.should.equal('bot');
+                    rawStreamEvents[2].data.line.should.equal(1);
+                    rawStreamEvents[21].data.line.should.equal(20);
+                    rawStreamEvents[22].data.captain.should.equal('spock');
+                    cleanup(done);
+                  }
+                  catch (e) {
+                    cleanup(() => {
+                      console.log('here5');
+                      done(e);
+                    });
+                  }
+                });
+              }
+              else if (eventCount > 23) {
+                console.log('here6');
+                cleanup(done.bind(this, new Error('More than 23 events received')));
+              }
+            }));
+
+          should.exist(producer.stream);
+          producer.stream.write({foo: 'bar'});
+          producer.stream.write({baz: 'bot'});
+          for (let line = 1; line < 21; line++) {
+            producer.stream.write({line});
+          }
+          producer.stream.end({captain: 'spock'});
+        });
+      });
+    });
+  };
+}
+
+describe('Plugins', () => {
   // getSuite('Kafka')();
   var memoryOptions = {
     stream: through2.obj(),
@@ -109,8 +207,9 @@ describe('Plugins', function() {
     version: 1,
   };
   getSuite('Memory', {Producer: memoryOptions, Consumer: memoryOptions})();
+
   const topic = '_eventbus_kafka_' + Date.now();
-  var kafkaOptions = {
+  let kafkaOptions = {
     Producer: {
       topic,
       version: 1,
@@ -124,12 +223,14 @@ describe('Plugins', function() {
       },
     },
   };
-  let createTopic = function(done) {
+
+  let createTopic = done => {
     let client = new kafka.Client();
     let producer = new kafka.Producer(client);
-    producer.on('ready', function() {
+    producer.on('ready', () => {
       producer.createTopics([topic], done);
     });
   };
-  getSuite('Kafka', kafkaOptions, createTopic)();
+
+  getSuite2('Kafka', kafkaOptions, createTopic)();
 });
