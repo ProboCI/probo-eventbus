@@ -1,11 +1,10 @@
 'use strict';
 
 /* global describe it */
-var should = require('should');
-var through2 = require('through2');
-var async = require('async');
-
-var kafka = require('kafka-node');
+const async = require('async');
+const kafka = require('kafka-node');
+const should = require('should');
+const through2 = require('through2');
 
 var lib = require('..');
 var plugins = lib.plugins;
@@ -22,45 +21,49 @@ var plugins = lib.plugins;
  * properly scoped async iteration.
  */
 function getSuite(plugin, options, beforeCallback, afterCallback) {
-  return function() {
+  return () => {
     if (beforeCallback) {
       before(beforeCallback);
     }
     if (afterCallback) {
       after(afterCallback);
     }
-    var Producer = plugins[plugin].Producer;
-    var Consumer = plugins[plugin].Consumer;
-    describe(plugin, function() {
-      it('should read messages from the consumer that were written to the producer', function(done) {
-        var instantiator = function(Plugin, type, cb) {
+
+    let Producer = plugins[plugin].Producer;
+    let Consumer = plugins[plugin].Consumer;
+
+    describe(plugin, () => {
+      it('should read messages from the consumer that were written to the producer', done => {
+        let instantiator = (Plugin, type, cb) => {
           new Plugin(options[type], cb);
         };
-        async.parallel({producer: instantiator.bind(null, Producer, 'Producer'), consumer: instantiator.bind(null, Consumer, 'Consumer')}, function(error, plugins) {
+
+        async.parallel({producer: instantiator.bind(null, Producer, 'Producer'), consumer: instantiator.bind(null, Consumer, 'Consumer')}, (error, plugins) => {
           let producer = plugins.producer;
           let consumer = plugins.consumer;
           let rawStreamEvents = [];
           let commitStream = consumer.createCommitStream({autoCommit: false, passthrough: true});
-          let cleanup = function(done) {
+          let cleanup = done => {
             async.series([commitStream.commit, producer.destroy, consumer.destroy], done);
           };
           let eventCount = 0;
           let regularStreamEvents = [];
-          consumer.stream.pipe(through2.obj(function(data, enc, cb) {
+          consumer.stream.pipe(through2.obj((data, enc, cb) => {
             regularStreamEvents.push(data);
             cb();
           }));
+
           consumer.rawStream
-            .pipe(through2.obj(function(data, enc, cb) {
+            .pipe(through2.obj((data, enc, cb) => {
               rawStreamEvents.push(data);
               cb(null, data);
             }))
             .pipe(commitStream)
-            .pipe(through2.obj(function(data, enc, cb) {
+            .pipe(through2.obj((data, enc, cb) => {
               eventCount++;
               cb(null);
               if (eventCount === 23) {
-                commitStream.commit(function() {
+                commitStream.commit(() => {
                   try {
                     regularStreamEvents.length.should.equal(23);
                     regularStreamEvents[0].foo.should.equal('bar');
@@ -78,7 +81,7 @@ function getSuite(plugin, options, beforeCallback, afterCallback) {
                     cleanup(done);
                   }
                   catch (e) {
-                    cleanup(function() {
+                    cleanup(() => {
                       done(e);
                     });
                   }
@@ -101,35 +104,11 @@ function getSuite(plugin, options, beforeCallback, afterCallback) {
   };
 }
 
-describe('Plugins', function() {
-  // getSuite('Kafka')();
+describe('Plugins', () => {
   var memoryOptions = {
     stream: through2.obj(),
     topic: 'test',
     version: 1,
   };
   getSuite('Memory', {Producer: memoryOptions, Consumer: memoryOptions})();
-  const topic = '_eventbus_kafka_' + Date.now();
-  var kafkaOptions = {
-    Producer: {
-      topic,
-      version: 1,
-    },
-    Consumer: {
-      topic,
-      group: 'test',
-      kafkaConsumerOptions: {
-        autoCommit: false,
-        autoCommitIntervalMs: 5,
-      },
-    },
-  };
-  let createTopic = function(done) {
-    let client = new kafka.Client();
-    let producer = new kafka.Producer(client);
-    producer.on('ready', function() {
-      producer.createTopics([topic], done);
-    });
-  };
-  getSuite('Kafka', kafkaOptions, createTopic)();
 });
