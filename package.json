@@ -1,6 +1,6 @@
 {
   "name": "probo-eventbus",
-  "version": "1.0.5",
+  "version": "2.0.0",
   "description": "A generalized event pub/sub framework.",
   "main": "index.js",
   "scripts": {
@@ -8,13 +8,25 @@
     "test": "./node_modules/.bin/mocha --timeout 5000",
     "watch": "./node_modules/.bin/mocha -w"
   },
-  "author": "Howard Tyson <howard@howardtyson.com>",
+  "authors": [
+    {
+      "name": "Howard Tyson",
+      "email": "howard@howardtyson.com",
+      "role": "Developer"
+    },
+    {
+      "name": "Michael R. Bagnall",
+      "email": "michael@bagnall.io",
+      "role": "Developer"
+    }
+  ],
   "license": "Apache-2.0",
   "dependencies": {
-    "async": "^3.0.1",
-    "kafka-node": "^3.0.1",
-    "lodash": "^4.17.15",
-    "through2": "^3.0.1"
+    "async": "^3.2.4",
+    "js-event-bus": "^1.1.1",
+    "kafka-node": "^5.0.0",
+    "lodash": "^4.17.21",
+    "through2": "^4.0.2"
   },
   "devDependencies": {
     "coveralls": "^3.0.4",
