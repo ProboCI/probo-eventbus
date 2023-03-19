@@ -24,7 +24,7 @@
   "dependencies": {
     "async": "^3.2.4",
     "js-event-bus": "^1.1.1",
-    "kafkajs": "^2.2.3",
+    "kafkajs": "^2.2.4",
     "lodash": "^4.17.21",
     "through2": "^4.0.2"
   },
