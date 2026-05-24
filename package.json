@@ -1,6 +1,6 @@
 {
   "name": "probo-eventbus",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A generalized event pub/sub framework.",
   "main": "index.js",
   "scripts": {
@@ -24,7 +24,7 @@
   "dependencies": {
     "async": "^3.2.4",
     "js-event-bus": "^1.1.1",
-    "kafka-node": "^5.0.0",
+    "kafkajs": "^2.2.4",
     "lodash": "^4.17.21",
     "through2": "^4.0.2"
   },
@@ -32,7 +32,7 @@
     "coveralls": "^3.0.4",
     "eslint": "^6.0.1",
     "eslint-config-probo": "^2.0.0",
-    "mocha": "^6.1.4",
+    "mocha": "^10.2.0",
     "nyc": "^14.1.1",
     "should": "^13.2.3"
   },
